@@ -1,0 +1,189 @@
+'use client'
+
+import { useState, useEffect, useCallback } from 'react'
+import BottleCard from '@/components/BottleCard'
+import Link from 'next/link'
+
+interface FeedItem {
+  id: string
+  content: string
+  contentType: string
+  createTime: number
+  user: { name: string; avatar: string; route: string }
+  likeCount: number
+  commentCount: number
+}
+
+interface FeedData {
+  items: FeedItem[]
+  total: number
+  hasMore: boolean
+}
+
+export default function BottlesPage() {
+  const [data, setData] = useState<FeedData | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [keyword, setKeyword] = useState('')
+  const [searchInput, setSearchInput] = useState('')
+
+  const fetchBottles = useCallback(async (kw?: string) => {
+    setLoading(true)
+    setError('')
+    try {
+      const params = new URLSearchParams({ page: '1' })
+      if (kw) params.set('keyword', kw)
+      const res = await fetch(`/api/bottles?${params}`)
+      const json = await res.json()
+      if (!res.ok) {
+        setError(json.error || '加载失败')
+        return
+      }
+      setData(json.data)
+    } catch {
+      setError('网络错误，请刷新重试')
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchBottles(keyword || undefined)
+  }, [fetchBottles, keyword])
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault()
+    setKeyword(searchInput.trim())
+  }
+
+  return (
+    <div className="max-w-4xl mx-auto px-4 py-8">
+      {/* Not logged in */}
+      {!loading && error.includes('未登录') && (
+        <div className="text-center py-16">
+          <div className="text-5xl mb-4">🔐</div>
+          <h2 className="text-white text-xl font-bold mb-2">需要登录</h2>
+          <p className="text-white/50 mb-6">登录后才能浏览漂流瓶</p>
+          <Link href="/login" className="inline-block px-6 py-2.5 bg-sky-500 hover:bg-sky-400 text-white rounded-full transition-colors">
+            去登录
+          </Link>
+        </div>
+      )}
+
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold text-white">漂流瓶海洋</h1>
+        <Link
+          href="/throw"
+          className="px-4 py-2 bg-sky-500 hover:bg-sky-400 text-white text-sm rounded-full transition-colors"
+        >
+          + 投出漂流瓶
+        </Link>
+      </div>
+
+      {/* Search */}
+      <form onSubmit={handleSearch} className="mb-6 flex gap-2">
+        <input
+          type="text"
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+          placeholder="搜索漂流瓶..."
+          className="flex-1 bg-white/10 border border-white/20 rounded-full px-4 py-2 text-white placeholder-white/30 text-sm focus:outline-none focus:border-sky-400 transition-colors"
+        />
+        <button
+          type="submit"
+          className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white text-sm rounded-full border border-white/20 transition-colors"
+        >
+          搜索
+        </button>
+        {keyword && (
+          <button
+            type="button"
+            onClick={() => { setSearchInput(''); setKeyword('') }}
+            className="px-3 py-2 text-white/50 hover:text-white text-sm transition-colors"
+          >
+            ✕
+          </button>
+        )}
+      </form>
+
+      {/* Content */}
+      {loading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="glass-card p-5 animate-pulse">
+              <div className="flex gap-2 mb-3">
+                <div className="w-8 h-8 rounded-full bg-white/10" />
+                <div className="flex-1">
+                  <div className="h-3 bg-white/10 rounded w-24 mb-1" />
+                  <div className="h-3 bg-white/10 rounded w-16" />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <div className="h-3 bg-white/10 rounded" />
+                <div className="h-3 bg-white/10 rounded w-5/6" />
+                <div className="h-3 bg-white/10 rounded w-4/6" />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : error ? (
+        <div className="text-center py-12">
+          {error.toLowerCase().includes('invitation') || error.toLowerCase().includes('town') || error.toLowerCase().includes('plaza') ? (
+            <>
+              <div className="text-5xl mb-4 float-anim">🍾</div>
+              <p className="text-white/60 mb-2">SecondMe Plaza 暂时无法访问</p>
+              <p className="text-white/40 text-sm mb-6">可能需要等待片刻后重试，或者账号尚未开通 Plaza 权限</p>
+              <button
+                onClick={() => fetchBottles(keyword || undefined)}
+                className="px-4 py-2 bg-sky-500 hover:bg-sky-400 text-white text-sm rounded-full transition-colors"
+              >
+                重试
+              </button>
+            </>
+          ) : (
+            <>
+              <div className="text-4xl mb-3">😕</div>
+              <p className="text-white/60 mb-4">{error}</p>
+              <button
+                onClick={() => fetchBottles(keyword || undefined)}
+                className="px-4 py-2 bg-sky-500 hover:bg-sky-400 text-white text-sm rounded-full transition-colors"
+              >
+                重试
+              </button>
+            </>
+          )}
+        </div>
+      ) : !data?.items?.length ? (
+        <div className="text-center py-16">
+          <div className="text-5xl mb-4 float-anim">🍾</div>
+          <p className="text-white/60 text-lg mb-2">
+            {keyword ? `没有找到关于"${keyword}"的漂流瓶` : '海洋还很安静'}
+          </p>
+          <p className="text-white/40 text-sm mb-6">来投出第一个漂流瓶吧</p>
+          <Link
+            href="/throw"
+            className="inline-block px-6 py-2.5 bg-sky-500 hover:bg-sky-400 text-white rounded-full transition-colors"
+          >
+            投出漂流瓶
+          </Link>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {data.items.map((item) => (
+            <BottleCard
+              key={item.id}
+              id={item.id}
+              content={item.content}
+              contentType={item.contentType}
+              createTime={item.createTime}
+              user={item.user}
+              likeCount={item.likeCount}
+              commentCount={item.commentCount}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
