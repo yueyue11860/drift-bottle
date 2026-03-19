@@ -1,7 +1,10 @@
 const SECONDME_API_BASE = 'https://app.mindos.com/gate/in/rest/third-party-agent/v1'
+const OAUTH_API_BASE = 'https://api.mindverse.com/gate/lab/api'
 
-export const SECONDME_AUTH_URL = 'https://second-me.cn/third-party-agent/auth'
+/** OAuth2 标准授权页 */
+export const SECONDME_AUTH_URL = 'https://go.second.me/oauth/'
 export const SECONDME_APP_URL = 'https://go.second.me'
+export const SECONDME_CLIENT_ID = process.env.NEXT_PUBLIC_SECONDME_CLIENT_ID ?? ''
 
 export interface SecondMeProfile {
   name: string
@@ -34,7 +37,7 @@ export interface PlazaAccess {
 }
 
 /**
- * Exchange SecondMe auth code for access token
+ * Exchange old smc- auth code for access token (manual flow fallback)
  */
 export async function exchangeCode(code: string): Promise<{ accessToken: string; tokenType: string }> {
   const res = await fetch(`${SECONDME_API_BASE}/auth/token/code`, {
@@ -49,17 +52,54 @@ export async function exchangeCode(code: string): Promise<{ accessToken: string;
 }
 
 /**
- * Get SecondMe user profile
+ * Exchange OAuth2 authorization code (lba_ac_) for access token
+ * Uses standard OAuth2 form-urlencoded format
+ */
+export async function exchangeOAuthCode(
+  code: string,
+  redirectUri: string
+): Promise<{ accessToken: string; refreshToken: string; tokenType: string }> {
+  const clientId = process.env.NEXT_PUBLIC_SECONDME_CLIENT_ID ?? ''
+  const clientSecret = process.env.SECONDME_CLIENT_SECRET ?? ''
+
+  const body = new URLSearchParams({
+    grant_type: 'authorization_code',
+    code,
+    redirect_uri: redirectUri,
+    client_id: clientId,
+    client_secret: clientSecret,
+  })
+
+  const res = await fetch(`${OAUTH_API_BASE}/oauth/token/code`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: body.toString(),
+  })
+  if (!res.ok) throw new Error(`HTTP ${res.status}`)
+  const data = await res.json()
+  if (data.code !== 0) throw new Error(data.message || '授权码兑换失败')
+  return data.data
+}
+
+/**
+ * Get SecondMe user profile (OAuth2 new endpoint)
  */
 export async function getProfile(accessToken: string): Promise<SecondMeProfile> {
-  const res = await fetch(`${SECONDME_API_BASE}/profile`, {
+  const res = await fetch(`${OAUTH_API_BASE}/secondme/user/info`, {
     headers: { Authorization: `Bearer ${accessToken}` },
-    next: { revalidate: 60 },
+    cache: 'no-store',
   })
   if (!res.ok) throw new Error(`HTTP ${res.status}`)
   const data = await res.json()
   if (data.code !== 0) throw new Error(data.message || '获取资料失败')
-  return data.data
+  const d = data.data
+  return {
+    name: d.name ?? d.username ?? '',
+    avatar: d.avatar ?? d.avatarUrl ?? '',
+    aboutMe: d.aboutMe ?? d.bio ?? '',
+    originRoute: d.originRoute ?? d.route ?? d.userId ?? '',
+    homepage: d.homepage ?? d.homepageUrl ?? '',
+  }
 }
 
 /**

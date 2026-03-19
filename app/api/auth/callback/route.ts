@@ -1,18 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { exchangeCode, getProfile } from '@/lib/secondme'
+import { exchangeOAuthCode, getProfile } from '@/lib/secondme'
 import { supabaseAdmin } from '@/lib/supabase'
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const code = searchParams.get('code')
-  const state = searchParams.get('state') // 可选：登录后跳转目标页
+  const state = searchParams.get('state')
 
-  if (!code || !code.startsWith('smc-')) {
+  if (!code) {
     return NextResponse.redirect(new URL('/login?error=missing_code', request.url))
   }
 
+  // 验证 state 防止 CSRF 攻击
+  const storedState = request.cookies.get('oauth_state')?.value
+  if (!storedState || storedState !== state) {
+    return NextResponse.redirect(new URL('/login?error=invalid_state', request.url))
+  }
+
+  // 解析真正的跳转目标（state 格式：<random>|<redirect>）
+  const [, redirectTarget] = (state ?? '').split('|')
+  const redirectTo = redirectTarget ? decodeURIComponent(redirectTarget) : '/dashboard'
+
   try {
-    const { accessToken } = await exchangeCode(code)
+    const redirectUri = new URL('/api/auth/callback', request.url).toString()
+    const { accessToken } = await exchangeOAuthCode(code, redirectUri)
 
     let profile = null
     try {
@@ -21,8 +32,9 @@ export async function GET(request: NextRequest) {
       // profile 获取失败不阻塞登录
     }
 
-    const redirectTo = state ? decodeURIComponent(state) : '/dashboard'
     const response = NextResponse.redirect(new URL(redirectTo, request.url))
+    // 清除 state cookie
+    response.cookies.delete('oauth_state')
 
     // httpOnly token cookie（7天）
     response.cookies.set('sm_token', accessToken, {

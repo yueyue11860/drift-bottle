@@ -2,7 +2,7 @@
 
 import { Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { SECONDME_AUTH_URL } from '@/lib/secondme'
+import { SECONDME_AUTH_URL, SECONDME_CLIENT_ID } from '@/lib/secondme'
 
 function LoginForm() {
   const searchParams = useSearchParams()
@@ -11,10 +11,20 @@ function LoginForm() {
 
   const handleLogin = () => {
     const callbackUrl = window.location.origin + '/api/auth/callback'
-    const state = redirect !== '/dashboard' ? encodeURIComponent(redirect) : undefined
-    const url = `${SECONDME_AUTH_URL}?redirect_uri=${encodeURIComponent(callbackUrl)}` +
-      (state ? `&state=${state}` : '')
-    window.location.href = url
+    // state = 随机值|目标页，防 CSRF 同时携带跳转目标
+    const randomPart = crypto.randomUUID()
+    const statePart = redirect !== '/dashboard' ? encodeURIComponent(redirect) : ''
+    const state = `${randomPart}|${statePart}`
+    // 写入 cookie 供服务端验证（5 分钟有效）
+    document.cookie = `oauth_state=${state}; path=/; max-age=300; SameSite=Lax`
+    const params = new URLSearchParams({
+      client_id: SECONDME_CLIENT_ID,
+      redirect_uri: callbackUrl,
+      response_type: 'code',
+      state,
+      scope: 'user.info',
+    })
+    window.location.href = `${SECONDME_AUTH_URL}?${params.toString()}`
   }
 
   return (
