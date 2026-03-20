@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import ChatWindow from '@/components/ChatWindow'
+import UserAvatar from '@/components/UserAvatar'
 
 interface FriendInfo {
   id: string
@@ -81,14 +82,12 @@ export default function PrivateChatPage() {
       {/* Header */}
       <div className="flex items-center gap-3 mb-4">
         <Link href="/friends" className="text-white/50 hover:text-white transition-colors">←</Link>
-        {friend?.avatar ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={friend.avatar} alt={friend.name} className="w-9 h-9 rounded-full border border-white/20" />
-        ) : (
-          <div className="w-9 h-9 rounded-full bg-pink-500/40 flex items-center justify-center text-white text-sm font-bold border border-white/20">
-            {friend?.name?.[0] || '?'}
-          </div>
-        )}
+        <UserAvatar
+          src={friend?.avatar}
+          name={friend?.name}
+          imgClassName="w-9 h-9 rounded-full border border-white/20"
+          fallbackClassName="w-9 h-9 rounded-full bg-pink-500/40 border border-white/20 flex items-center justify-center text-white text-sm font-bold"
+        />
         <div>
           <h1 className="text-white font-semibold text-base">{friend?.name || '好友'}</h1>
           <p className="text-white/40 text-xs">私信聊天</p>

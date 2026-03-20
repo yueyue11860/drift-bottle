@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentUser } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
+import { buildOceanBotWelcomeMessage, isOceanBotRoute } from '@/lib/ocean-bot'
 
 // POST /api/bottles/[id]/chat — 发起临时聊天
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -12,18 +13,24 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   // 从 Supabase 获取漂流瓶及作者信息
   const { data: bottle } = await supabaseAdmin
     .from('bottles')
-    .select('id, author_id')
+    .select('id, author_id, content, content_type, author:author_id(id, name, secondme_route)')
     .eq('id', bottleId)
     .single()
 
   if (!bottle) return NextResponse.json({ error: '漂流瓶不存在' }, { status: 404 })
 
+  const bottleRecord = bottle as any
+
   // 不能和自己聊天
-  if (bottle.author_id === me.id) {
+  if (bottleRecord.author_id === me.id) {
     return NextResponse.json({ error: '不能和自己的漂流瓶聊天' }, { status: 400 })
   }
 
-  const authorUser = { id: bottle.author_id }
+  const authorUser = {
+    id: bottleRecord.author_id,
+    name: bottleRecord.author?.name ?? '海洋来信',
+    route: bottleRecord.author?.secondme_route ?? '',
+  }
 
   // 查找已有聊天
   const { data: existing } = await supabaseAdmin
@@ -49,6 +56,20 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  if (isOceanBotRoute(authorUser.route)) {
+    await supabaseAdmin.from('messages').insert({
+      chat_type: 'bottle',
+      chat_id: chat.id,
+      sender_id: authorUser.id,
+      content: buildOceanBotWelcomeMessage({
+        authorName: authorUser.name,
+        authorRoute: authorUser.route,
+        contentType: bottleRecord.content_type,
+        bottleContent: bottleRecord.content,
+      }),
+    })
+  }
 
   // 给作者发通知
   await supabaseAdmin.from('notifications').insert({

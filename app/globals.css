@@ -58,6 +58,30 @@ body {
   100% { transform: translateY(-80px) scale(1.4); opacity: 0; }
 }
 
+@keyframes ocean-marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.ocean-marquee {
+  display: flex;
+  width: max-content;
+  animation: ocean-marquee 28s linear infinite;
+  will-change: transform;
+}
+
+.ocean-marquee:hover {
+  animation-play-state: paused;
+}
+
+.drift-card {
+  transition: transform 400ms ease, opacity 400ms ease;
+}
+
+.drift-card:hover {
+  transform: translateY(-6px);
+}
+
 /* Line-clamp utility */
 .line-clamp-3 {
   display: -webkit-box;

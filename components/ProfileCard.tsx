@@ -1,3 +1,5 @@
+import UserAvatar from '@/components/UserAvatar'
+
 interface ProfileCardProps {
   name: string
   avatar: string
@@ -10,18 +12,12 @@ export default function ProfileCard({ name, avatar, aboutMe, originRoute, homepa
   return (
     <div className="glass-card p-6">
       <div className="flex items-start gap-4">
-        {avatar ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={avatar}
-            alt={name}
-            className="w-16 h-16 rounded-full border-2 border-sky-400/40 shrink-0"
-          />
-        ) : (
-          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-sky-400 to-blue-600 flex items-center justify-center text-white text-2xl font-bold border-2 border-sky-400/40 shrink-0">
-            {name?.[0] || '?'}
-          </div>
-        )}
+        <UserAvatar
+          src={avatar}
+          name={name}
+          imgClassName="w-16 h-16 rounded-full border-2 border-sky-400/40 shrink-0"
+          fallbackClassName="w-16 h-16 rounded-full bg-gradient-to-br from-sky-400 to-blue-600 flex items-center justify-center text-white text-2xl font-bold border-2 border-sky-400/40 shrink-0"
+        />
         <div className="flex-1 min-w-0">
           <h2 className="text-white text-xl font-bold">{name || '未设置名称'}</h2>
           {originRoute && (

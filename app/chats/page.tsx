@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import UserAvatar from '@/components/UserAvatar'
 
 interface ChatItem {
   id: string
@@ -89,14 +90,12 @@ export default function ChatsPage() {
                   href={`/chats/${chat.id}`}
                   className="glass-card p-4 flex items-center gap-3 hover:bg-white/10 transition-colors block"
                 >
-                  {other.avatar ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={other.avatar} alt={other.name} className="w-10 h-10 rounded-full border border-white/20 shrink-0" />
-                  ) : (
-                    <div className="w-10 h-10 rounded-full bg-sky-500/40 flex items-center justify-center text-white text-sm font-bold border border-white/20 shrink-0">
-                      {other.name?.[0] || '?'}
-                    </div>
-                  )}
+                  <UserAvatar
+                    src={other.avatar}
+                    name={other.name}
+                    imgClassName="w-10 h-10 rounded-full border border-white/20 shrink-0"
+                    fallbackClassName="w-10 h-10 rounded-full bg-sky-500/40 border border-white/20 shrink-0 flex items-center justify-center text-white text-sm font-bold"
+                  />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <span className="text-white text-sm font-medium truncate">{other.name}</span>

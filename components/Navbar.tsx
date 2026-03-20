@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import NotificationBell from '@/components/NotificationBell'
+import UserAvatar from '@/components/UserAvatar'
 
 interface UserInfo {
   name: string
@@ -72,18 +73,12 @@ export default function Navbar() {
             </Link>
             <NotificationBell />
             <Link href="/dashboard" className="flex items-center gap-2 group">
-              {user.avatar ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={user.avatar}
-                  alt={user.name}
-                  className="w-8 h-8 rounded-full border-2 border-white/30 group-hover:border-[#0ea5e9] transition-colors"
-                />
-              ) : (
-                <div className="w-8 h-8 rounded-full bg-[#0ea5e9] flex items-center justify-center text-white text-xs font-bold">
-                  {user.name?.[0] || '?'}
-                </div>
-              )}
+              <UserAvatar
+                src={user.avatar}
+                name={user.name}
+                imgClassName="w-8 h-8 rounded-full border-2 border-white/30 group-hover:border-[#0ea5e9] transition-colors"
+                fallbackClassName="w-8 h-8 rounded-full bg-[#0ea5e9] flex items-center justify-center text-white text-xs font-bold"
+              />
               <span className="text-white/80 text-sm group-hover:text-white transition-colors hidden md:block">
                 {user.name}
               </span>

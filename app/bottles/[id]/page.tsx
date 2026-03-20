@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
+import UserAvatar from '@/components/UserAvatar'
 
 interface Post {
   id: string
@@ -146,14 +147,12 @@ export default function BottleDetailPage() {
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
-            {post.user.avatar ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={post.user.avatar} alt={post.user.name} className="w-10 h-10 rounded-full border border-white/20" />
-            ) : (
-              <div className="w-10 h-10 rounded-full bg-sky-500/40 flex items-center justify-center text-white text-sm font-bold border border-white/20">
-                {post.user.name?.[0] || '?'}
-              </div>
-            )}
+            <UserAvatar
+              src={post.user.avatar}
+              name={post.user.name}
+              imgClassName="w-10 h-10 rounded-full border border-white/20"
+              fallbackClassName="w-10 h-10 rounded-full bg-sky-500/40 border border-white/20 flex items-center justify-center text-white text-sm font-bold"
+            />
             <div>
               {profileUrl ? (
                 <a
@@ -231,18 +230,12 @@ export default function BottleDetailPage() {
               return (
                 <div key={comment.id} className="glass-card p-4">
                   <div className="flex items-center gap-2 mb-2">
-                    {comment.user.avatar ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={comment.user.avatar}
-                        alt={comment.user.name}
-                        className="w-7 h-7 rounded-full border border-white/20"
-                      />
-                    ) : (
-                      <div className="w-7 h-7 rounded-full bg-sky-500/30 flex items-center justify-center text-white text-xs border border-white/20">
-                        {comment.user.name?.[0] || '?'}
-                      </div>
-                    )}
+                    <UserAvatar
+                      src={comment.user.avatar}
+                      name={comment.user.name}
+                      imgClassName="w-7 h-7 rounded-full border border-white/20"
+                      fallbackClassName="w-7 h-7 rounded-full bg-sky-500/30 border border-white/20 flex items-center justify-center text-white text-xs"
+                    />
                     {commentProfileUrl ? (
                       <a
                         href={commentProfileUrl}

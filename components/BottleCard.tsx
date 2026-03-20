@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import UserAvatar from '@/components/UserAvatar'
 
 interface BottleCardProps {
   id: string
@@ -43,18 +44,12 @@ export default function BottleCard({
         {/* Header */}
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
-            {user.avatar ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={user.avatar}
-                alt={user.name}
-                className="w-8 h-8 rounded-full border border-white/20"
-              />
-            ) : (
-              <div className="w-8 h-8 rounded-full bg-sky-500/40 flex items-center justify-center text-white text-xs font-bold border border-white/20">
-                {user.name?.[0] || '?'}
-              </div>
-            )}
+            <UserAvatar
+              src={user.avatar}
+              name={user.name}
+              imgClassName="w-8 h-8 rounded-full border border-white/20"
+              fallbackClassName="w-8 h-8 rounded-full bg-sky-500/40 border border-white/20 flex items-center justify-center text-white text-xs font-bold"
+            />
             <div>
               <p className="text-white text-sm font-medium leading-none">{user.name || '匿名'}</p>
               <p className="text-white/40 text-xs mt-0.5">{date}</p>

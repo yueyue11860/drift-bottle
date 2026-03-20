@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentUser } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
+import { buildOceanBotAutoReply, isOceanBotRoute } from '@/lib/ocean-bot'
 
 type Params = { params: Promise<{ chatId: string }> }
 
@@ -13,7 +14,7 @@ export async function GET(request: NextRequest, { params }: Params) {
   // 验证是否是聊天参与者
   const { data: chat } = await supabaseAdmin
     .from('bottle_chats')
-    .select('id, initiator_id, author_id, affinity_score, status, expires_at')
+    .select('id, bottle_id, initiator_id, author_id, affinity_score, status, expires_at, initiator:initiator_id(id, name, avatar), author:author_id(id, name, avatar, secondme_route)')
     .eq('id', chatId)
     .single()
 
@@ -59,7 +60,7 @@ export async function POST(request: NextRequest, { params }: Params) {
   // 验证聊天
   const { data: chat } = await supabaseAdmin
     .from('bottle_chats')
-    .select('id, initiator_id, author_id, affinity_score, status, expires_at')
+    .select('id, bottle_id, initiator_id, author_id, affinity_score, status, expires_at, author:author_id(id, name, avatar, secondme_route)')
     .eq('id', chatId)
     .single()
 
@@ -80,7 +81,7 @@ export async function POST(request: NextRequest, { params }: Params) {
   const { data: message, error: msgErr } = await supabaseAdmin
     .from('messages')
     .insert({ chat_type: 'bottle', chat_id: chatId, sender_id: me.id, content: content.trim() })
-    .select('id, content, sender_id, created_at')
+    .select('id, content, sender_id, created_at, sender:sender_id(name, avatar)')
     .single()
 
   if (msgErr) return NextResponse.json({ error: msgErr.message }, { status: 500 })
@@ -100,5 +101,56 @@ export async function POST(request: NextRequest, { params }: Params) {
     related_id: chatId,
   })
 
-  return NextResponse.json({ message, affinityScore: newScore }, { status: 201 })
+  let autoReply: any = null
+  const chatRecord = chat as any
+  const author = chatRecord.author as { id: string; name: string; secondme_route?: string } | null
+
+  if (author && author.id !== me.id && isOceanBotRoute(author.secondme_route)) {
+    const { data: recentMessages } = await supabaseAdmin
+      .from('messages')
+      .select('content, sender_id')
+      .eq('chat_type', 'bottle')
+      .eq('chat_id', chatId)
+      .order('created_at', { ascending: true })
+      .limit(8)
+
+    const { data: bottle } = await supabaseAdmin
+      .from('bottles')
+      .select('content, content_type')
+      .eq('id', chatRecord.bottle_id)
+      .single()
+
+    if (bottle) {
+      const history = [...(recentMessages ?? []), { content: content.trim(), sender_id: me.id }]
+        .slice(-8)
+        .map((item) => ({
+          sender: item.sender_id === author.id ? 'bot' as const : 'user' as const,
+          content: item.content,
+        }))
+
+      const replyText = buildOceanBotAutoReply({
+        authorName: author.name,
+        authorRoute: author.secondme_route,
+        contentType: bottle.content_type,
+        bottleContent: bottle.content,
+        userMessage: content.trim(),
+        history,
+      })
+
+      const { data: insertedReply } = await supabaseAdmin
+        .from('messages')
+        .insert({
+          chat_type: 'bottle',
+          chat_id: chatId,
+          sender_id: author.id,
+          content: replyText,
+        })
+        .select('id, content, sender_id, created_at, sender:sender_id(name, avatar)')
+        .single()
+
+      autoReply = insertedReply
+    }
+  }
+
+  return NextResponse.json({ message, autoReply, affinityScore: newScore }, { status: 201 })
 }

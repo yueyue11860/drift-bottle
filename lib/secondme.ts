@@ -93,9 +93,11 @@ export async function getProfile(accessToken: string): Promise<SecondMeProfile> 
   const data = await res.json()
   if (data.code !== 0) throw new Error(data.message || '获取资料失败')
   const d = data.data
+  const rawAvatar =
+    d.avatar ?? d.avatarUrl ?? d.headImgUrl ?? d.userAvatar ?? d.profileImage ?? d.picture ?? ''
   return {
     name: d.name ?? d.username ?? '',
-    avatar: d.avatar ?? d.avatarUrl ?? '',
+    avatar: rawAvatar ? rawAvatar.replace(/^http:\/\//i, 'https://') : '',
     aboutMe: d.aboutMe ?? d.bio ?? '',
     originRoute: d.originRoute ?? d.route ?? d.userId ?? '',
     homepage: d.homepage ?? d.homepageUrl ?? '',

@@ -32,6 +32,7 @@ export default function ChatWindow({
   const [input, setInput] = useState('')
   const [sending, setSending] = useState(false)
   const [error, setError] = useState('')
+  const [showTyping, setShowTyping] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
   const realtimeRef = useRef<ReturnType<typeof createClient> | null>(null)
 
@@ -121,6 +122,17 @@ export default function ChatWindow({
           return [...prev, json.message]
         })
       }
+      if (json.autoReply) {
+        setShowTyping(true)
+        const typingDelay = Math.min(2200, Math.max(900, json.autoReply.content.length * 22))
+        window.setTimeout(() => {
+          setShowTyping(false)
+          setMessages((prev) => {
+            if (prev.find((m) => m.id === json.autoReply.id)) return prev
+            return [...prev, json.autoReply]
+          })
+        }, typingDelay)
+      }
     } catch {
       setError('网络错误，请重试')
     } finally {
@@ -159,6 +171,13 @@ export default function ChatWindow({
             </div>
           )
         })}
+        {showTyping && (
+          <div className="flex justify-start">
+            <div className="max-w-[75%] px-4 py-3 rounded-2xl rounded-bl-sm bg-white/10 text-white/60 text-sm">
+              对方正在整理回复...
+            </div>
+          </div>
+        )}
         <div ref={bottomRef} />
       </div>
 

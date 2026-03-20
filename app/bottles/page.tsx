@@ -26,6 +26,7 @@ export default function BottlesPage() {
   const [error, setError] = useState('')
   const [keyword, setKeyword] = useState('')
   const [searchInput, setSearchInput] = useState('')
+  const [spotlightIndex, setSpotlightIndex] = useState(0)
 
   const fetchBottles = useCallback(async (kw?: string) => {
     setLoading(true)
@@ -50,6 +51,14 @@ export default function BottlesPage() {
   useEffect(() => {
     fetchBottles(keyword || undefined)
   }, [fetchBottles, keyword])
+
+  useEffect(() => {
+    if (!data?.items?.length) return
+    const timer = window.setInterval(() => {
+      setSpotlightIndex((current) => (current + 1) % data.items.length)
+    }, 3200)
+    return () => window.clearInterval(timer)
+  }, [data])
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
@@ -106,6 +115,67 @@ export default function BottlesPage() {
           </button>
         )}
       </form>
+
+      {!loading && !error && data?.items?.length ? (
+        <>
+          <section className="mb-6 grid gap-4 lg:grid-cols-[1.7fr_1fr]">
+            <div className="glass-card overflow-hidden border border-sky-300/10">
+              <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
+                <div>
+                  <p className="text-xs tracking-[0.24em] uppercase text-sky-300/70">Live Ocean Feed</p>
+                  <h2 className="text-white font-semibold mt-1">海面实时漂流</h2>
+                </div>
+                <span className="text-xs text-emerald-300/80">实时刷新感</span>
+              </div>
+              <div className="relative overflow-hidden py-3">
+                <div className="ocean-marquee">
+                  {[...data.items, ...data.items].map((item, index) => (
+                    <Link
+                      key={`${item.id}-${index}`}
+                      href={`/bottles/${item.id}`}
+                      className="inline-flex min-w-[320px] max-w-[320px] items-center gap-3 rounded-full border border-white/10 bg-white/8 px-4 py-3 mr-3 align-top hover:bg-white/12 transition-colors"
+                    >
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-sky-500/20 text-sm text-white">
+                        {item.user.name.slice(0, 1) || '海'}
+                      </span>
+                      <span className="min-w-0">
+                        <span className="block truncate text-sm font-medium text-white">{item.user.name}</span>
+                        <span className="block truncate text-xs text-white/55">{item.content}</span>
+                      </span>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="glass-card p-4 border border-cyan-300/10">
+              <p className="text-xs tracking-[0.24em] uppercase text-cyan-300/70">Spotlight</p>
+              <div className="mt-3 rounded-2xl bg-gradient-to-br from-sky-500/15 via-cyan-400/10 to-transparent p-4 border border-white/10 min-h-[174px]">
+                <div className="flex items-center justify-between gap-3 mb-3">
+                  <div>
+                    <p className="text-white text-lg font-semibold">{data.items[spotlightIndex]?.user.name}</p>
+                    <p className="text-white/45 text-xs">当前经过你附近海域的热门瓶子</p>
+                  </div>
+                  <span className="text-xs px-2 py-1 rounded-full bg-sky-400/15 text-sky-200 border border-sky-300/20">
+                    {data.items[spotlightIndex]?.contentType === 'ama' ? 'AMA' : data.items[spotlightIndex]?.contentType === 'info' ? '找信息' : '讨论'}
+                  </span>
+                </div>
+                <p className="text-white/85 text-sm leading-6 line-clamp-3">{data.items[spotlightIndex]?.content}</p>
+                <div className="mt-4 flex items-center justify-between text-xs text-white/45">
+                  <span>互动 {data.items[spotlightIndex]?.commentCount ?? 0}</span>
+                  <span>热度 {data.items[spotlightIndex]?.likeCount ?? 0}</span>
+                </div>
+                <Link
+                  href={`/bottles/${data.items[spotlightIndex]?.id}`}
+                  className="mt-4 inline-flex items-center text-sm text-sky-300 hover:text-sky-200 transition-colors"
+                >
+                  捡起这个瓶子 →
+                </Link>
+              </div>
+            </div>
+          </section>
+        </>
+      ) : null}
 
       {/* Content */}
       {loading ? (
@@ -170,18 +240,22 @@ export default function BottlesPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {data.items.map((item) => (
-            <BottleCard
-              key={item.id}
-              id={item.id}
-              content={item.content}
-              contentType={item.contentType}
-              createTime={item.createTime}
-              user={item.user}
-              likeCount={item.likeCount}
-              commentCount={item.commentCount}
-            />
-          ))}
+          {data.items.map((item, index) => {
+            const driftClass = index % 4 === 0 ? 'md:translate-y-3' : index % 4 === 2 ? 'md:-translate-y-3' : ''
+            return (
+              <div key={item.id} className={`drift-card ${driftClass}`}>
+                <BottleCard
+                  id={item.id}
+                  content={item.content}
+                  contentType={item.contentType}
+                  createTime={item.createTime}
+                  user={item.user}
+                  likeCount={item.likeCount}
+                  commentCount={item.commentCount}
+                />
+              </div>
+            )
+          })}
         </div>
       )}
     </div>
