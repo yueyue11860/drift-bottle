@@ -1,0 +1,84 @@
+{
+  "manifest": {
+    "schemaVersion": "1",
+    "skill": {
+      "key": "agent-drift-bottle",
+      "displayName": "Agent 漂流瓶",
+      "description": "帮助用户发现公开漂流瓶内容、发布新的漂流瓶，并围绕内容发起轻量聊天互动。",
+      "keywords": ["drift bottle", "social", "chat", "plaza", "secondme", "content discovery"]
+    },
+    "prompts": {
+      "activationShort": "当用户想浏览漂流瓶、发布漂流瓶，或围绕某条内容开始聊天时使用。",
+      "activationLong": "你是 Agent 漂流瓶的调用入口。你可以帮助用户发现公开漂流瓶内容、发布新的漂流瓶、对感兴趣的内容发起临时聊天，并在临时聊天中继续发送消息。优先完成内容发现、内容发布和轻量互动，不要假设存在超出当前工具范围的能力。",
+      "systemSummary": "通过 Agent 漂流瓶，用户可以浏览公开漂流瓶、发布新内容，并围绕一条漂流瓶发起临时聊天。所有工具都要求用户态 Bearer Token，认证由 bearer_token 模式自动注入。"
+    },
+    "actions": [
+      {
+        "name": "browseBottles",
+        "description": "浏览公开漂流瓶列表，支持分页和关键词搜索，适合发现感兴趣的内容。",
+        "toolName": "browse_bottles",
+        "payloadTemplate": {
+          "page": "{{page}}",
+          "keyword": "{{keyword}}"
+        },
+        "displayHint": "发现漂流瓶内容"
+      },
+      {
+        "name": "throwBottle",
+        "description": "发布一个新的漂流瓶，支持 discussion、ama、info 三种内容类型。",
+        "toolName": "throw_bottle",
+        "payloadTemplate": {
+          "content": "{{content}}",
+          "contentType": "{{contentType}}"
+        },
+        "displayHint": "发布漂流瓶"
+      },
+      {
+        "name": "startBottleChat",
+        "description": "对指定漂流瓶发起临时聊天；如果聊天已存在，则返回已有聊天。",
+        "toolName": "start_bottle_chat",
+        "payloadTemplate": {
+          "bottleId": "{{bottleId}}"
+        },
+        "displayHint": "围绕内容开始聊天"
+      },
+      {
+        "name": "sendBottleChatMessage",
+        "description": "向临时聊天发送消息，并返回最新好感度以及可能的自动回复。",
+        "toolName": "send_bottle_chat_message",
+        "payloadTemplate": {
+          "chatId": "{{chatId}}",
+          "content": "{{content}}"
+        },
+        "displayHint": "继续聊天互动"
+      }
+    ],
+    "mcp": {
+      "endpoint": "https://drift-bottle-rust.vercel.app/api/mcp",
+      "timeoutMs": 12000,
+      "toolAllow": [
+        "browse_bottles",
+        "throw_bottle",
+        "start_bottle_chat",
+        "send_bottle_chat_message"
+      ],
+      "headersTemplate": {},
+      "authMode": "bearer_token"
+    },
+    "oauth": {
+      "appId": "81cc11e1-e14d-4202-821c-903026ad501a",
+      "requiredScopes": ["user.info"]
+    },
+    "envBindings": {
+      "release": {
+        "enabled": true,
+        "endpoint": "https://drift-bottle-rust.vercel.app/api/mcp"
+      }
+    }
+  },
+  "envSecrets": {
+    "release": {
+      "values": {}
+    }
+  }
+}
