@@ -125,13 +125,31 @@ export default function BottlesPage() {
                   <p className="text-xs tracking-[0.24em] uppercase text-sky-300/70">Live Ocean Feed</p>
                   <h2 className="text-white font-semibold mt-1">海面实时漂流</h2>
                 </div>
-                <span className="text-xs text-emerald-300/80">实时刷新感</span>
               </div>
-              <div className="relative overflow-hidden py-3">
+              <div className="relative overflow-hidden py-3 space-y-3">
+                {/* Row 1 */}
                 <div className="ocean-marquee">
                   {[...data.items, ...data.items].map((item, index) => (
                     <Link
-                      key={`${item.id}-${index}`}
+                      key={`row1-${item.id}-${index}`}
+                      href={`/bottles/${item.id}`}
+                      className="inline-flex min-w-[320px] max-w-[320px] items-center gap-3 rounded-full border border-white/10 bg-white/8 px-4 py-3 mr-3 align-top hover:bg-white/12 transition-colors"
+                    >
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-sky-500/20 text-sm text-white">
+                        {item.user.name.slice(0, 1) || '海'}
+                      </span>
+                      <span className="min-w-0">
+                        <span className="block truncate text-sm font-medium text-white">{item.user.name}</span>
+                        <span className="block truncate text-xs text-white/55">{item.content}</span>
+                      </span>
+                    </Link>
+                  ))}
+                </div>
+                {/* Row 2 */}
+                <div className="ocean-marquee-reverse">
+                  {[...data.items.slice().reverse(), ...data.items.slice().reverse()].map((item, index) => (
+                    <Link
+                      key={`row2-${item.id}-${index}`}
                       href={`/bottles/${item.id}`}
                       className="inline-flex min-w-[320px] max-w-[320px] items-center gap-3 rounded-full border border-white/10 bg-white/8 px-4 py-3 mr-3 align-top hover:bg-white/12 transition-colors"
                     >
@@ -240,22 +258,19 @@ export default function BottlesPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {data.items.map((item, index) => {
-            const driftClass = index % 4 === 0 ? 'md:translate-y-3' : index % 4 === 2 ? 'md:-translate-y-3' : ''
-            return (
-              <div key={item.id} className={`drift-card ${driftClass}`}>
-                <BottleCard
-                  id={item.id}
-                  content={item.content}
-                  contentType={item.contentType}
-                  createTime={item.createTime}
-                  user={item.user}
-                  likeCount={item.likeCount}
-                  commentCount={item.commentCount}
-                />
-              </div>
-            )
-          })}
+          {data.items.map((item) => (
+            <div key={item.id}>
+              <BottleCard
+                id={item.id}
+                content={item.content}
+                contentType={item.contentType}
+                createTime={item.createTime}
+                user={item.user}
+                likeCount={item.likeCount}
+                commentCount={item.commentCount}
+              />
+            </div>
+          ))}
         </div>
       )}
     </div>

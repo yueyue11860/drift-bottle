@@ -128,7 +128,7 @@ export default function ChatPage() {
       )}
 
       {/* Chat window */}
-      <div className="glass-card overflow-hidden" style={{ height: '65vh' }}>
+      <div className="glass-card overflow-hidden flex flex-col" style={{ height: '65vh' }}>
         {/* Affinity bar (only for active bottle chats) */}
         {!isFriendship && (
           <AffinityBar

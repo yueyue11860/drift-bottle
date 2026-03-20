@@ -95,7 +95,7 @@ export default function PrivateChatPage() {
       </div>
 
       {/* Chat window */}
-      <div className="glass-card overflow-hidden" style={{ height: '70vh' }}>
+      <div className="glass-card overflow-hidden flex flex-col" style={{ height: '70vh' }}>
         {friendshipId && myId ? (
           <ChatWindow
             chatType="private"
